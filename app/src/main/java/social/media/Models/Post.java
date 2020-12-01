@@ -16,6 +16,7 @@ public class Post {
     private Map<String,String> latestComment;
     private int numberOfReactsCounter;
     private Map<String, Integer> numberOfReacts;
+    private String authorAvatar;
 
     public Post(int numberOfComments, int numberOfReactsCounter, Map<String, Integer> numberOfReacts, String username, String text, String authorUID) {
         this.numberOfComments = numberOfComments;
@@ -33,6 +34,11 @@ public class Post {
     public Post(){
 
     }
+
+    public String getAuthorAvatar() {
+        return authorAvatar;
+    }
+
     public int getNumberOfComments() {
         return numberOfComments;
     }

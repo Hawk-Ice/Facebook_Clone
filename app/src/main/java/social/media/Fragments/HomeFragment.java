@@ -1,5 +1,6 @@
 package social.media.Fragments;
 
+import android.app.Activity;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -23,9 +24,11 @@ import com.google.firebase.firestore.QuerySnapshot;
 import java.util.HashMap;
 import java.util.Map;
 
+import social.media.Adapters.OnlineStatusAdapter;
 import social.media.DataStorage;
 import social.media.Models.Post;
 import social.media.Adapters.SampleAdapter;
+import social.media.Models.User;
 import social.media.databinding.FragmentHomeBinding;
 
 /**
@@ -46,8 +49,10 @@ public class HomeFragment extends Fragment {
     FragmentHomeBinding binding;
     RecyclerView recyclerView;
     SampleAdapter postsAdapter;
+    OnlineStatusAdapter onlineStatusAdapter;
     public static FirebaseFirestore db = FirebaseFirestore.getInstance();
     public static CollectionReference feedsCollection = db.collection("FeedsCollection");
+    public static CollectionReference friendsCollection = db.collection("FriendsCollection");
 
     public HomeFragment() {
         // Required empty public constructor
@@ -70,60 +75,75 @@ public class HomeFragment extends Fragment {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
-
-        Query query = feedsCollection.document(DataStorage.getDocumentName()).collection("Posts");
-        FirestoreRecyclerOptions<Post> options = new FirestoreRecyclerOptions.Builder<Post>()
-                .setQuery(query, Post.class)
+        // -- Query for posts
+        Query postQuery = feedsCollection.document(DataStorage.getDocumentName()).collection("Posts");
+        FirestoreRecyclerOptions<Post> postOptions = new FirestoreRecyclerOptions.Builder<Post>()
+                .setQuery(postQuery, Post.class)
                 .build();
-        // -- setup recyclerview
-        postsAdapter = new SampleAdapter(options);
+        // -- Query for online friends
+        Query onlineStatusQuery = friendsCollection.document(DataStorage.getDocumentName()).collection("Friends");
+        FirestoreRecyclerOptions<User> userOptions = new FirestoreRecyclerOptions.Builder<User>()
+                .setQuery(onlineStatusQuery, User.class)
+                .build();
 
+        // -- setup recyclerview
+        onlineStatusAdapter = new OnlineStatusAdapter(userOptions);
+//        onlineStatusAdapter.setAdapterContext(getActivity());
+
+        postsAdapter = new SampleAdapter(postOptions);
+        postsAdapter.setAdapterContext(getActivity());
         postsAdapter.setOnItemClickInterface(new SampleAdapter.OnItemClickInterface() {
             @Override
             public void onReactionSelected(String documentID, String action) {
-                Map<String, String> reaction = new HashMap<>();
-                reaction.put("reaction", action);
-                db.collection("PostsCollection").document(documentID).collection("Reactions").add(reaction);
+//                Map<String, String> reaction = new HashMap<>();
+//                reaction.put("reaction", action);
+//                db.collection("PostsCollection").document(documentID).collection("Reactions").add(reaction);
             }
 
             @Override
             public void onReactionReselected(final String documentID, final String action) {
-                Map<String, String> reaction = new HashMap<>();
-                reaction.put("reaction", action);
-                db.collection("PostsCollection").document(documentID).collection("Reactions")
-                        .whereEqualTo("reactionBy", DataStorage.getDocumentName())
-                        .get()
-                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                            @Override
-                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                if(!task.getResult().isEmpty()){
-                                    String reactionDocumentID = task.getResult().getDocuments().get(0).getId();
-                                    db.collection("PostsCollection").document(documentID).collection("Reactions").document(reactionDocumentID)
-                                            .update("reaction", action);
-                                }
-                            }
-                        });
+//                Map<String, String> reaction = new HashMap<>();
+//                reaction.put("reaction", action);
+//                db.collection("PostsCollection").document(documentID).collection("Reactions")
+//                        .whereEqualTo("reactionBy", DataStorage.getDocumentName())
+//                        .get()
+//                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+//                            @Override
+//                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+//                                if(!task.getResult().isEmpty()){
+//                                    String reactionDocumentID = task.getResult().getDocuments().get(0).getId();
+//                                    db.collection("PostsCollection").document(documentID).collection("Reactions").document(reactionDocumentID)
+//                                            .update("reaction", action);
+//                                }
+//                            }
+//                        });
             }
 
             @Override
             public void onReactionUnselected(final String documentID) {
-                db.collection("PostsCollection").document(documentID).collection("Reactions")
-                        .whereEqualTo("reactionBy", DataStorage.getDocumentName())
-                        .get()
-                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                            @Override
-                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                if(!task.getResult().isEmpty()){
-                                    String reactionDocumentID = task.getResult().getDocuments().get(0).getId();
-                                    db.collection("PostsCollection").document(documentID).collection("Reactions").document(reactionDocumentID)
-                                            .delete();
-                                }
-                            }
-                        });
+//                db.collection("PostsCollection").document(documentID).collection("Reactions")
+//                        .whereEqualTo("reactionBy", DataStorage.getDocumentName())
+//                        .get()
+//                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+//                            @Override
+//                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+//                                if(!task.getResult().isEmpty()){
+//                                    String reactionDocumentID = task.getResult().getDocuments().get(0).getId();
+//                                    db.collection("PostsCollection").document(documentID).collection("Reactions").document(reactionDocumentID)
+//                                            .delete();
+//                                }
+//                            }
+//                        });
+            }
+
+            @Override
+            public void onReactionLayoutClicked(String postID) {
+
+                CommentsBottomSheet commentsBottomSheet = new CommentsBottomSheet(postID);
+                commentsBottomSheet.show(getActivity().getSupportFragmentManager(), "Comment Bottom Sheet");
             }
         });
     }
-
 
 
     @Override
@@ -132,22 +152,30 @@ public class HomeFragment extends Fragment {
         // Inflate the layout for this fragment
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View view = binding.getRoot();
-        binding.recyclerView.setHasFixedSize(true);
+
         // -- look into this
+        binding.recyclerView.setHasFixedSize(true);
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+        binding.recyclerView.setNestedScrollingEnabled(false);
         binding.recyclerView.setAdapter(postsAdapter);
+        // -- online status
+        binding.onlineFriendsRecyclerView.setHasFixedSize(true);
+        binding.onlineFriendsRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity(), LinearLayoutManager.HORIZONTAL, false));
+        binding.onlineFriendsRecyclerView.setNestedScrollingEnabled(false);
+        binding.onlineFriendsRecyclerView.setAdapter(onlineStatusAdapter);
 
         return view;
-
     }
     @Override
     public void onStart() {
         super.onStart();
         postsAdapter.startListening();
+        onlineStatusAdapter.startListening();
     }
     @Override
     public void onStop() {
         super.onStop();
         postsAdapter.stopListening();
+        onlineStatusAdapter.stopListening();
     }
 }

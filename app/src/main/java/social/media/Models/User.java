@@ -3,6 +3,7 @@ package social.media.Models;
 import androidx.lifecycle.MutableLiveData;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import social.media.Models.Post;
@@ -12,12 +13,17 @@ public class User {
     // -- kelangan sakto ung name nung field sa pojo attributes
     private String username;
     private String email;
+    private String status;
+    private Date lastOnline;
+    private String userProfilePicture;
 
     public String getEmail() {
         return email;
     }
 
     private String password;
+
+
 
     private List<Post> postList = new ArrayList<>();
     private List<String> friends;
@@ -56,7 +62,9 @@ public class User {
         return password;
     }
 
-
+    public String getUserProfilePicture() {
+        return userProfilePicture;
+    }
 
     // -- converts the hashmap to List<Post>
     public List<Post> getPosts() {
