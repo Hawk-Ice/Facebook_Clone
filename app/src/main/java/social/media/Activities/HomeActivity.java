@@ -158,6 +158,12 @@ public class HomeActivity extends AppCompatActivity {
          });
         tabLayoutMediator.attach();
     }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+    }
+
     public void addPost(View view){
         Map<String, Integer> numberOfReacts = new HashMap<>();
         numberOfReacts.put("Like", 0);

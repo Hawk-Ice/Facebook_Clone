@@ -1,9 +1,7 @@
 package social.media.Fragments;
 
-import android.app.Activity;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -11,24 +9,20 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.firebase.ui.firestore.FirestoreRecyclerOptions;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QuerySnapshot;
-
-import java.util.HashMap;
-import java.util.Map;
 
 import social.media.Adapters.OnlineStatusAdapter;
 import social.media.DataStorage;
 import social.media.Models.Post;
-import social.media.Adapters.SampleAdapter;
+import social.media.Adapters.PostsAdapter;
 import social.media.Models.User;
+import social.media.R;
 import social.media.databinding.FragmentHomeBinding;
 
 /**
@@ -48,7 +42,7 @@ public class HomeFragment extends Fragment {
     private String mParam2;
     FragmentHomeBinding binding;
     RecyclerView recyclerView;
-    SampleAdapter postsAdapter;
+    PostsAdapter postsAdapter;
     OnlineStatusAdapter onlineStatusAdapter;
     public static FirebaseFirestore db = FirebaseFirestore.getInstance();
     public static CollectionReference feedsCollection = db.collection("FeedsCollection");
@@ -80,6 +74,7 @@ public class HomeFragment extends Fragment {
         FirestoreRecyclerOptions<Post> postOptions = new FirestoreRecyclerOptions.Builder<Post>()
                 .setQuery(postQuery, Post.class)
                 .build();
+        Toast.makeText(getActivity(), "Size: "+postOptions.getSnapshots().isEmpty(), Toast.LENGTH_SHORT).show();
         // -- Query for online friends
         Query onlineStatusQuery = friendsCollection.document(DataStorage.getDocumentName()).collection("Friends");
         FirestoreRecyclerOptions<User> userOptions = new FirestoreRecyclerOptions.Builder<User>()
@@ -90,9 +85,9 @@ public class HomeFragment extends Fragment {
         onlineStatusAdapter = new OnlineStatusAdapter(userOptions);
 //        onlineStatusAdapter.setAdapterContext(getActivity());
 
-        postsAdapter = new SampleAdapter(postOptions);
+        postsAdapter = new PostsAdapter(postOptions);
         postsAdapter.setAdapterContext(getActivity());
-        postsAdapter.setOnItemClickInterface(new SampleAdapter.OnItemClickInterface() {
+        postsAdapter.setOnItemClickInterface(new PostsAdapter.OnItemClickInterface() {
             @Override
             public void onReactionSelected(String documentID, String action) {
 //                Map<String, String> reaction = new HashMap<>();
@@ -152,6 +147,11 @@ public class HomeFragment extends Fragment {
         // Inflate the layout for this fragment
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View view = binding.getRoot();
+
+        Glide.with(getActivity())
+                .load(DataStorage.getUser().getUserProfilePicture())
+                .placeholder(R.drawable.ic_placeholder_avatar)
+                .into(binding.commentUserImage);
 
         // -- look into this
         binding.recyclerView.setHasFixedSize(true);
